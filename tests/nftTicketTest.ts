@@ -38,89 +38,177 @@ describe("Interaction with nftTicket", () => {
 
   describe("Setting ticket categories", async () => {
     it("Should set the right ticket price and max no", async () => {
-      // TODO: Get the data type for TicketCategory directly
-      const VIP: any = {
-        ticketPrice: 0,
-        maxNoOfTickets: 0,
-      };
       // NOTE: Set ticket category price and max no accordingly
-      const ticketPriceSet = 0.09;
-      const maxNoOfTicketsSet = 250;
-
-      const ticketPriceSetBN = ethers.utils.parseEther(
-        ticketPriceSet.toString()
-      );
-
-      const tx = await nftTicketContract
-        .connect(accounts[0])
-        .setUpTicket(VIP, ticketPriceSetBN, maxNoOfTicketsSet);
-      const ticketPriceExpectedBN = (
-        await nftTicketContract.ticketCategoryArray(0)
-      ).ticketPrice;
-      const ticketPriceExpectedString = ethers.utils.formatEther(
-        ticketPriceExpectedBN
-      );
-      expect(ticketPriceExpectedString).to.eq(ticketPriceSet.toString());
-
-      const maxNoOfTicketsExpected = (
-        await nftTicketContract.ticketCategoryArray(0)
-      ).maxNoOfTickets;
-      
-      expect(maxNoOfTicketsExpected).to.eq(maxNoOfTicketsSet.toString());
-    });
-
-    it("Should show the right number of ticket categories in the array", async () => {
-      // TODO: Get the data type for TicketCategory directly
-      const VIP: any = {
-        ticketPrice: 0,
-        maxNoOfTickets: 0,
-      };
-      // NOTE: Set ticket category price and max no accordingly
+      const ticketCategoryNameVIP = "VIP";
       const ticketPriceSetVIP = 0.09;
       const maxNoOfTicketsSetVIP = 250;
+      const numberOfTicketsBoughtSet = 0;
 
+      const ticketCategoryNameBytes32 = ethers.utils.formatBytes32String(
+        ticketCategoryNameVIP
+      );
       const ticketPriceSetVIPBN = ethers.utils.parseEther(
         ticketPriceSetVIP.toString()
       );
-
       const tx = await nftTicketContract
-        .connect(accounts[0])
-        .setUpTicket(VIP, ticketPriceSetVIPBN, maxNoOfTicketsSetVIP);
+        .connect(eventOwner)
+        .setUpTicket(
+          ticketCategoryNameBytes32,
+          ticketPriceSetVIPBN,
+          maxNoOfTicketsSetVIP,
+          numberOfTicketsBoughtSet
+        );
+      await tx.wait();
+      
+      const ticketCategoryVIPExpected = await nftTicketContract
+        .ticketCategoryMapping(ticketCategoryNameBytes32);
+      const ticketPriceVIPExpectedBN = await ticketCategoryVIPExpected.ticketPrice;
+      const ticketPriceVIPExpectedString = await ethers.utils.formatEther(
+        ticketPriceVIPExpectedBN
+      );
+      expect(ticketPriceVIPExpectedString).to.eq(ticketPriceSetVIP.toString());
+      
+    });
 
-      // TODO: Get the data type for TicketCategory directly
-      const VVIP: any = {
-        ticketPrice: 0,
-        maxNoOfTickets: 0,
-      };
+    it("Should show the correct number of ticket categories in the array", async () => {
       // NOTE: Set ticket category price and max no accordingly
-      const ticketPriceSetVVIP = 0.14;
-      const maxNoOfTicketsSetVVIP = 40;
+      const ticketCategoryNameVIP = "VIP";
+      const ticketPriceSetVIP = 0.09;
+      const maxNoOfTicketsSetVIP = 250;
+      const numberOfTicketsBoughtVIPSet = 0;
 
+      const ticketCategoryNameVIPBytes32 = ethers.utils.formatBytes32String(
+        ticketCategoryNameVIP
+      );
+      const ticketPriceSetVIPBN = ethers.utils.parseEther(
+        ticketPriceSetVIP.toString()
+      );
+      const tx1 = await nftTicketContract
+        .connect(eventOwner)
+        .setUpTicket(
+          ticketCategoryNameVIPBytes32,
+          ticketPriceSetVIPBN,
+          maxNoOfTicketsSetVIP,
+          numberOfTicketsBoughtVIPSet
+        );
+      await tx1.wait();
+
+      // NOTE: Set ticket category price and max no accordingly
+      const ticketCategoryNameVVIP = "VVIP";
+      const ticketPriceSetVVIP = 0.09;
+      const maxNoOfTicketsSetVVIP = 250;
+      const numberOfTicketsBoughtVVIPSet = 0;
+
+      const ticketCategoryNameVVIPBytes32 = ethers.utils.formatBytes32String(
+        ticketCategoryNameVVIP
+      );
       const ticketPriceSetVVIPBN = ethers.utils.parseEther(
         ticketPriceSetVVIP.toString()
       );
-
       const tx2 = await nftTicketContract
-        .connect(accounts[0])
-        .setUpTicket(VVIP, ticketPriceSetVVIPBN, maxNoOfTicketsSetVVIP);
-      
-      const ticketCategoryArrayIndex1Expected =
-        await nftTicketContract.ticketCategoryArray(1);
-      
-      const ticketPriceExpectedBN =
-        ticketCategoryArrayIndex1Expected.ticketPrice;
-      const ticketPriceExpectedString = ethers.utils.formatEther(
-        ticketPriceExpectedBN
+        .connect(eventOwner)
+        .setUpTicket(
+          ticketCategoryNameVVIPBytes32,
+          ticketPriceSetVVIPBN,
+          maxNoOfTicketsSetVVIP,
+          numberOfTicketsBoughtVVIPSet
+        );
+      await tx2.wait();
+
+      const arrayLengthExpected = await nftTicketContract.getTicketCategoryArraySize();
+      expect(arrayLengthExpected).to.eq("2");
+    });
+  });
+  describe("Buying tickets", async () => {
+    // NOTE: Set ticket category price and max no accordingly
+    const ticketCategoryNameVIP = "VIP";
+    const ticketPriceSetVIP = 0.09;
+    const maxNoOfTicketsSetVIP = 250;
+    const numberOfTicketsBoughtSet = 0;
+
+    const ticketCategoryNameBytes32 = ethers.utils.formatBytes32String(
+      ticketCategoryNameVIP
+    );
+    const ticketPriceSetVIPBN = ethers.utils.parseEther(
+      ticketPriceSetVIP.toString()
+    );
+    beforeEach(async () => {
+      const tx = await nftTicketContract
+        .connect(eventOwner)
+        .setUpTicket(
+          ticketCategoryNameBytes32,
+          ticketPriceSetVIPBN,
+          maxNoOfTicketsSetVIP,
+          numberOfTicketsBoughtSet
+        );
+      await tx.wait();
+    });
+    it("Should not allow free minting", async () => {
+      const buyer = accounts[1];
+      // const ticketCategoryBytes32
+      await expect(
+        nftTicketContract
+          .connect(buyer)
+          .buyTicket(ticketCategoryNameBytes32)
+      ).to.be.revertedWith("Please pay for ticket");
+    });
+    it("Should allow minting only with correct price", async () => {
+      const buyer = accounts[1];
+      // const ticketCategoryBytes32
+      const tx = await
+        nftTicketContract.connect(buyer).buyTicket(
+          ticketCategoryNameBytes32,
+          { value: ethers.utils.parseEther(ticketPriceSetVIP.toString()) }
+        );
+      await tx.wait();
+      const numberOfTicketOwnedByBuyerExpected = await nftTicketContract.balanceOf(buyer.address);
+      expect(numberOfTicketOwnedByBuyerExpected).to.eq(1);
+    });
+    it("Should not allow transfer of tickets bought", async () => {
+      const buyer = accounts[1];
+      // const ticketCategoryBytes32
+      const tx = await nftTicketContract
+        .connect(buyer)
+        .buyTicket(ticketCategoryNameBytes32, {
+          value: ethers.utils.parseEther(ticketPriceSetVIP.toString()),
+        });
+      await tx.wait();
+      const transferee = accounts[2];
+      await expect(
+        nftTicketContract
+          .connect(buyer)
+          .transferFrom(buyer.address, transferee.address, 1)
+      ).to.be.revertedWith("Resell not allowed");
+    });
+  });
+  describe("Setting event details", async () => {
+    
+    it("Should set the name correctly", async () => {
+      // NOTE: Set the event details accordingly
+      const eventNameSetString = "Encode Club Dinner";
+      const eventDateSetString = "30 June 2022";
+      const eventTimeSetString = "7pm";
+
+      const eventNameSetBytes32 =
+        ethers.utils.formatBytes32String(eventNameSetString);
+      const eventDateSetBytes32 =
+        ethers.utils.formatBytes32String(eventDateSetString);
+      const eventTimeSetBytes32 =
+        ethers.utils.formatBytes32String(eventTimeSetString);
+      const tx = await nftTicketContract
+        .connect(eventOwner)
+        .setEventDetails(
+          eventNameSetBytes32,
+          eventDateSetBytes32,
+          eventTimeSetBytes32
+        );
+      await tx.wait();
+      const eventDetailsExpected = await nftTicketContract.eventDetails();
+      const eventNameExpectedBytes32 = eventDetailsExpected.eventName;
+      const eventNameExpectedString = await ethers.utils.parseBytes32String(
+        eventNameExpectedBytes32
       );
-      expect(ticketPriceExpectedString).to.eq(ticketPriceSetVVIP.toString());
-
-      const maxNoOfTicketsExpected =
-        ticketCategoryArrayIndex1Expected.maxNoOfTickets;
-
-      expect(maxNoOfTicketsExpected).to.eq(maxNoOfTicketsSetVVIP.toString());
-      
-      // TODO: How to get array length?
-      // console.log(`Array length: ${ticketCategoryArrayExpected}`);
+      expect(eventNameExpectedString).to.eq(eventNameSetString);
     });
   });
 });
