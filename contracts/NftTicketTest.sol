@@ -8,27 +8,43 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 contract NftTicket is ERC721, Ownable, ReentrancyGuard {
-
     struct TicketCategory {
         uint256 ticketPrice;
         uint256 maxNoOfTickets;
     }
+
+    mapping(bytes32 => TicketCategory) public ticketCategoryMapping;
+
     TicketCategory[] public ticketCategoryArray;
 
-    constructor(
-        string memory _ticketName,
-        string memory _ticketSymbol
-    ) ERC721(_ticketName, _ticketSymbol){}
+    constructor(string memory _ticketName, string memory _ticketSymbol)
+        ERC721(_ticketName, _ticketSymbol)
+    {}
 
-    function setUpTicket(
-        TicketCategory memory _ticketCategory, 
+    function ticketArraySize() public view returns (uint256 size) {
+        size = ticketCategoryArray.length;
+    }
+
+    function setUpTicket(uint256 _ticketPrice, uint256 _maxNoOfTickets)
+        public
+        onlyOwner
+    {
+        ticketCategoryArray.push(
+            TicketCategory({
+                ticketPrice: _ticketPrice,
+                maxNoOfTickets: _maxNoOfTickets
+            })
+        );
+    }
+
+    function setUpTicket2(
         uint256 _ticketPrice,
-        uint256 _maxNoOfTickets
-        ) public onlyOwner {
-            // TicketCategory memory _categoryName = TicketCategory(_ticketPrice, _maxNoOfTickets);
-            // ticketCategoryArray.push(cat1);
-            _ticketCategory.ticketPrice = _ticketPrice;
-            _ticketCategory.maxNoOfTickets = _maxNoOfTickets;
-            ticketCategoryArray.push(_ticketCategory);
-        }
+        uint256 _maxNoOfTickets,
+        bytes32 _name
+    ) public onlyOwner {
+        ticketCategoryMapping[_name] = TicketCategory({
+            ticketPrice: _ticketPrice,
+            maxNoOfTickets: _maxNoOfTickets
+        });
+    }
 }
