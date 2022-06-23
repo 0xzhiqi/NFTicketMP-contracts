@@ -1,29 +1,48 @@
-// We require the Hardhat Runtime Environment explicitly here. This is optional
-// but useful for running the script in a standalone fashion through `node <script>`.
-//
-// When running the script with `npx hardhat run <script>` you'll find the Hardhat
-// Runtime Environment's members available in the global scope.
-import { ethers } from "hardhat";
+import { ethers } from "ethers";
+import "dotenv/config";
+import * as nftTicketJson from "../artifacts/contracts/NftTicketTest.sol/NftTicket.json";
+
+// This key is already public on Herong's Tutorial Examples - v1.03, by Dr. Herong Yang
+// Do never expose your keys like this
+const EXPOSED_KEY =
+  "8da4ef21b864d2cc526dbdb2a120bd2874c36c9d0a1fb7f8c63d7f7a8b41de8f";
 
 async function main() {
-  // Hardhat always runs the compile task when running scripts with its command
-  // line interface.
-  //
-  // If this script is run directly using `node` you may want to call compile
-  // manually to make sure everything is compiled
-  // await hre.run('compile');
+  const wallet =
+    process.env.PRIVATE_KEY_1 && process.env.PRIVATE_KEY_1.length > 0
+      ? new ethers.Wallet(process.env.PRIVATE_KEY_1)
+      : new ethers.Wallet(EXPOSED_KEY);
 
-  // We get the contract to deploy
-  const Greeter = await ethers.getContractFactory("Greeter");
-  const greeter = await Greeter.deploy("Hello, Hardhat!");
+  console.log(`Using address ${wallet.address}`);
 
-  await greeter.deployed();
+  const provider = new ethers.providers.JsonRpcProvider(process.env.GOERLI_URL);
+  const signer = wallet.connect(provider);
 
-  console.log("Greeter deployed to:", greeter.address);
+  console.log("Deploying NftTicket contract");
+
+  const nftTicketContractFactory = await new ethers.ContractFactory(
+    nftTicketJson.abi,
+    nftTicketJson.bytecode,
+    signer
+  );
+
+  // NOTE: To adjust these two variables as necessary
+  const EventNameSet = "Encode Club Dinner";
+  const EventSymbolSet = "ECD";
+
+  const nftTicketContract = await nftTicketContractFactory.deploy(
+    EventNameSet,
+    EventSymbolSet
+  );
+  console.log("Awaiting confirmation on deployment of myTokenContract");
+  const tx = await nftTicketContract.deployed();
+  const deployTxReceipt = await tx.deployTransaction.wait();
+  console.log("Completed");
+  console.log("Contract deployed at: ", nftTicketContract.address);
+  console.log(`Gas used: ${deployTxReceipt.gasUsed}`);
+  console.log("Transaction hash:", deployTxReceipt.transactionHash);
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
 main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
