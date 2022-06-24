@@ -12,6 +12,7 @@ contract NftTicket is ERC721, Ownable, ReentrancyGuard {
     uint256 public tokenId;
     string public baseURISet;
     struct TicketCategory {
+        bytes32 categoryName;
         uint256 ticketPrice;
         uint256 maxNoOfTickets;
         uint256 numberOfTicketsBought;
@@ -57,6 +58,7 @@ contract NftTicket is ERC721, Ownable, ReentrancyGuard {
         uint256 _numberOfTicketsBought
     ) public onlyOwner {
         ticketCategoryMapping[_name] = TicketCategory({
+            categoryName: _name,
             ticketPrice: _ticketPrice,
             maxNoOfTickets: _maxNoOfTickets,
             numberOfTicketsBought: _numberOfTicketsBought
