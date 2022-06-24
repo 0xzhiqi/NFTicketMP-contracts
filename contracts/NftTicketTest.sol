@@ -21,6 +21,8 @@ contract NftTicket is ERC721, Ownable, ReentrancyGuard {
         bytes32 eventDate;
         bytes32 eventTime;
     }
+    event BuyTicket (address indexed _buyer, bytes32 _ticketCategory);
+    event CheckIn (address indexed _attendee, bool checkedIn);
     EventDetails public eventDetails;
     mapping(address => bool) public checkedIn;
     mapping(address => bool) public hasBoughtTicket;
@@ -85,6 +87,7 @@ contract NftTicket is ERC721, Ownable, ReentrancyGuard {
         ticketCategoryBuying.numberOfTicketsBought +=1;
         tokenId++;
         _safeMint(msg.sender, tokenId);
+        emit BuyTicket(msg.sender, _ticketCategory);
     }
 
     /**
@@ -92,6 +95,7 @@ contract NftTicket is ERC721, Ownable, ReentrancyGuard {
     */
     function checkAttendeeIn(address _attendeeAddress) public onlyOwner {
         checkedIn[_attendeeAddress] = true;
+        emit CheckIn(_attendeeAddress, checkedIn[_attendeeAddress]);
     }
 
     /**

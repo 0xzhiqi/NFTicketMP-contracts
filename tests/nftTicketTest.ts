@@ -116,6 +116,7 @@ describe("Interaction with nftTicket", () => {
       await tx2.wait();
 
       const arrayLengthExpected = await nftTicketContract.getTicketCategoryArraySize();
+      console.log(`Array Length: ${arrayLengthExpected}`);
       expect(arrayLengthExpected).to.eq("2");
     });
   });
