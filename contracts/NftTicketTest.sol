@@ -67,8 +67,13 @@ contract NftTicket is ERC721, Ownable, ReentrancyGuard {
     }
 
     // TODO: Consider removing
-    function getTicketCategoryArraySize() public view returns (uint256 size) {
-        size = ticketCategoryArray.length;
+    // function getTicketCategoryArraySize() public view returns (uint256 size) {
+    //     size = ticketCategoryArray.length;
+    // }
+
+    /// @dev To test on bsc testnet if this works
+    function getTicketCategoryArraySize() public view returns (uint) {
+        return ticketCategoryArray.length;
     }
 
     /**
