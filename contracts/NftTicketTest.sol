@@ -22,8 +22,8 @@ contract NftTicket is ERC721, Ownable, ReentrancyGuard {
         bytes32 eventDate;
         bytes32 eventTime;
     }
-    event BuyTicket (address indexed _buyer, bytes32 _ticketCategory);
-    event CheckIn (address indexed _attendee, bool checkedIn);
+    event BuyTicket(address indexed _buyer, bytes32 _ticketCategory);
+    event CheckIn(address indexed _attendee, bool checkedIn);
     EventDetails public eventDetails;
     mapping(address => bool) public checkedIn;
     mapping(address => bool) public hasBoughtTicket;
@@ -32,16 +32,17 @@ contract NftTicket is ERC721, Ownable, ReentrancyGuard {
     price and max no for each ticket category can be queried
     */
     mapping(bytes32 => TicketCategory) public ticketCategoryMapping;
-    
-    // TODO: Consider removing
-    TicketCategory[] public ticketCategoryArray;
 
-    constructor(
-        string memory _ticketName,
-        string memory _ticketSymbol
-    ) ERC721(_ticketName, _ticketSymbol){}
+    mapping(uint256 => bytes32) internal _tokenCategory;
 
-    function setEventDetails (
+    // For tracking the length of the array you do need to do this:
+    bytes32[] public ticketCategoryArray;
+
+    constructor(string memory _ticketName, string memory _ticketSymbol)
+        ERC721(_ticketName, _ticketSymbol)
+    {}
+
+    function setEventDetails(
         bytes32 _eventName,
         bytes32 _eventDate,
         bytes32 _eventTime
@@ -57,13 +58,18 @@ contract NftTicket is ERC721, Ownable, ReentrancyGuard {
         uint256 _maxNoOfTickets,
         uint256 _numberOfTicketsBought
     ) public onlyOwner {
+        require(
+            ticketCategoryMapping[_name].categoryName == 0x0 &&
+                ticketCategoryMapping[_name].maxNoOfTickets == 0,
+            "This category already exists"
+        );
         ticketCategoryMapping[_name] = TicketCategory({
             categoryName: _name,
             ticketPrice: _ticketPrice,
             maxNoOfTickets: _maxNoOfTickets,
             numberOfTicketsBought: _numberOfTicketsBought
         });
-        ticketCategoryArray.push(ticketCategoryMapping[_name]);
+        ticketCategoryArray.push(_name);
     }
 
     // TODO: Consider removing
@@ -72,7 +78,7 @@ contract NftTicket is ERC721, Ownable, ReentrancyGuard {
     // }
 
     /// @dev To test on bsc testnet if this works
-    function getTicketCategoryArraySize() public view returns (uint) {
+    function getTicketCategoryArraySize() public view returns (uint256) {
         return ticketCategoryArray.length;
     }
 
@@ -81,20 +87,29 @@ contract NftTicket is ERC721, Ownable, ReentrancyGuard {
     */
     function buyTicket(bytes32 _ticketCategory) public payable {
         require(hasBoughtTicket[msg.sender] == false, "Already bought");
-        TicketCategory storage ticketCategoryBuying = ticketCategoryMapping[_ticketCategory];
         require(
-            ticketCategoryBuying.maxNoOfTickets > ticketCategoryBuying.numberOfTicketsBought,
+            ticketCategoryMapping[_ticketCategory].maxNoOfTickets >
+                ticketCategoryMapping[_ticketCategory].numberOfTicketsBought,
             "Sold out!"
         );
-        require (
-            msg.value >= ticketCategoryBuying.ticketPrice,
+        require(
+            msg.value >= ticketCategoryMapping[_ticketCategory].ticketPrice,
             "Please pay for ticket"
         );
         hasBoughtTicket[msg.sender] = true;
-        ticketCategoryBuying.numberOfTicketsBought +=1;
-        tokenId++;
-        _safeMint(msg.sender, tokenId);
+        ticketCategoryMapping[_ticketCategory].numberOfTicketsBought += 1;
+        mintTicket(_ticketCategory);
         emit BuyTicket(msg.sender, _ticketCategory);
+    }
+
+    function mintTicket(bytes32 _ticketCategory) internal {
+        tokenId++;
+        _tokenCategory[tokenId] = _ticketCategory;
+        _safeMint(msg.sender, tokenId);
+    }
+
+    function checkCategory(uint256 _tokenId) public view returns (bytes32) {
+        return _tokenCategory[_tokenId];
     }
 
     /**
@@ -122,7 +137,10 @@ contract NftTicket is ERC721, Ownable, ReentrancyGuard {
     ) public override {
         require(canTransfer, "Resell not allowed");
         //solhint-disable-next-line max-line-length
-        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: caller is not token owner nor approved");
+        require(
+            _isApprovedOrOwner(_msgSender(), tokenId),
+            "ERC721: caller is not token owner nor approved"
+        );
 
         _transfer(from, to, tokenId);
     }
@@ -149,7 +167,10 @@ contract NftTicket is ERC721, Ownable, ReentrancyGuard {
         bytes memory data
     ) public override {
         require(canTransfer, "Resell not allowed");
-        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: caller is not token owner nor approved");
+        require(
+            _isApprovedOrOwner(_msgSender(), tokenId),
+            "ERC721: caller is not token owner nor approved"
+        );
         _safeTransfer(from, to, tokenId, data);
     }
 

@@ -6,7 +6,6 @@
   "repository": "https://github.com/NFTTM/NFTicketMP-contracts",
   "author": "Team F",
   "license": "MIT",
-  "private": false,
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.0",
     "@nomiclabs/hardhat-etherscan": "^3.0.0",
@@ -41,5 +40,6 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.6.0"
-  }
+  },
+  "packageManager": "yarn@3.2.1"
 }

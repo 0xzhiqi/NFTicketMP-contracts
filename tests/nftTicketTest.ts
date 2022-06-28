@@ -1,6 +1,7 @@
+/* eslint-disable node/no-missing-import */
+/* eslint-disable node/no-unpublished-import */
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
-import { BigNumberish } from "ethers";
 import { ethers } from "hardhat";
 import { NftTicket } from "../typechain";
 
@@ -8,7 +9,7 @@ describe("Interaction with nftTicket", () => {
   let accounts: SignerWithAddress[];
   let nftTicketContract: NftTicket;
   let eventOwner: SignerWithAddress;
-  let EventNameSet: string; 
+  let EventNameSet: string;
   let EventSymbolSet: string;
 
   beforeEach(async () => {
@@ -25,7 +26,92 @@ describe("Interaction with nftTicket", () => {
       EventSymbolSet
     );
     await nftTicketContract.deployed();
-  })
+  });
+
+  describe("Matheus trying to help as it is possible", async () => {
+    it("should work as intended for the suggested structure", async () => {
+      const ticketCategoryNameVIP = "VIP";
+      const ticketPriceSetVIP = 0.09;
+      const maxNoOfTicketsSetVIP = 250;
+      const numberOfTicketsBoughtSet = 0;
+
+      const ticketCategoryNameBytes32 = ethers.utils.formatBytes32String(
+        ticketCategoryNameVIP
+      );
+      const ticketPriceSetVIPBN = ethers.utils.parseEther(
+        ticketPriceSetVIP.toString()
+      );
+      const tx = await nftTicketContract
+        .connect(eventOwner)
+        .setUpTicket(
+          ticketCategoryNameBytes32,
+          ticketPriceSetVIPBN,
+          maxNoOfTicketsSetVIP,
+          numberOfTicketsBoughtSet
+        );
+      await tx.wait();
+      const buyer = accounts[1];
+      const tx1 = await nftTicketContract
+        .connect(buyer)
+        .buyTicket(ticketCategoryNameBytes32, {
+          value: ethers.utils.parseEther(ticketPriceSetVIP.toString()),
+        });
+      await tx1.wait();
+      const numberOfTicketOwnedByBuyerExpected =
+        await nftTicketContract.balanceOf(buyer.address);
+      expect(numberOfTicketOwnedByBuyerExpected).to.eq(1);
+      const ownerOfThatVipToken = await nftTicketContract.ownerOf(1);
+      expect(ownerOfThatVipToken).to.eq(buyer.address);
+      const token1CategoryBytes32 = await nftTicketContract.checkCategory(1);
+      expect(token1CategoryBytes32).to.eq(ticketCategoryNameBytes32);
+      const token1CategoryName = ethers.utils.parseBytes32String(
+        token1CategoryBytes32
+      );
+      expect(token1CategoryName).to.eq(ticketCategoryNameVIP);
+      const categoryInfo = await nftTicketContract.ticketCategoryMapping(
+        token1CategoryBytes32
+      );
+      console.log(categoryInfo);
+    });
+
+    it("should loop on the tickets", async () => {
+      const ticketPriceSet = [0.09, 0.05, 0.01];
+      const maxNoOfTicketsSet = [250, 1000, 10000];
+      const numberOfTicketsBoughtSet = 0;
+      const ticketCategories = ["VIP", "Regular", "Student"];
+      for (let index = 0; index < ticketCategories.length; index++) {
+        const category = ticketCategories[index];
+        const ticketCategoryNameBytes32 =
+          ethers.utils.formatBytes32String(category);
+        const ticketPriceSetBN = ethers.utils.parseEther(
+          ticketPriceSet[index].toString()
+        );
+        const tx = await nftTicketContract
+          .connect(eventOwner)
+          .setUpTicket(
+            ticketCategoryNameBytes32,
+            ticketPriceSetBN,
+            maxNoOfTicketsSet[index],
+            numberOfTicketsBoughtSet
+          );
+        await tx.wait();
+      }
+
+      // Now imagine you are in the frontend and you want to loop over those:
+
+      const ticketCategoriesLength =
+        await nftTicketContract.getTicketCategoryArraySize();
+      for (let index = 0; index < ticketCategoriesLength.toNumber(); index++) {
+        const categoryBytes32 = await nftTicketContract.ticketCategoryArray(
+          index
+        );
+        const categoryInfo = await nftTicketContract.ticketCategoryMapping(
+          categoryBytes32
+        );
+        console.log(categoryInfo);
+      }
+    });
+  });
 
   describe("Deployment of contract by event organiser ", async () => {
     it("Should show the correct name and symbol", async () => {
@@ -34,7 +120,7 @@ describe("Interaction with nftTicket", () => {
       const eventSymbolExpected = await nftTicketContract.symbol();
       expect(eventSymbolExpected).to.eq(EventSymbolSet);
     });
-  })
+  });
 
   describe("Setting ticket categories", async () => {
     it("Should set the right ticket price and max no", async () => {
@@ -59,15 +145,17 @@ describe("Interaction with nftTicket", () => {
           numberOfTicketsBoughtSet
         );
       await tx.wait();
-      
-      const ticketCategoryVIPExpected = await nftTicketContract
-        .ticketCategoryMapping(ticketCategoryNameBytes32);
-      const ticketPriceVIPExpectedBN = await ticketCategoryVIPExpected.ticketPrice;
+
+      const ticketCategoryVIPExpected =
+        await nftTicketContract.ticketCategoryMapping(
+          ticketCategoryNameBytes32
+        );
+      const ticketPriceVIPExpectedBN =
+        await ticketCategoryVIPExpected.ticketPrice;
       const ticketPriceVIPExpectedString = await ethers.utils.formatEther(
         ticketPriceVIPExpectedBN
       );
       expect(ticketPriceVIPExpectedString).to.eq(ticketPriceSetVIP.toString());
-      
     });
 
     it("Should show the correct number of ticket categories in the array", async () => {
@@ -115,7 +203,8 @@ describe("Interaction with nftTicket", () => {
         );
       await tx2.wait();
 
-      const arrayLengthExpected = await nftTicketContract.getTicketCategoryArraySize();
+      const arrayLengthExpected =
+        await nftTicketContract.getTicketCategoryArraySize();
       console.log(`Array Length: ${arrayLengthExpected}`);
       expect(arrayLengthExpected).to.eq("2");
     });
@@ -148,21 +237,20 @@ describe("Interaction with nftTicket", () => {
       const buyer = accounts[1];
       // const ticketCategoryBytes32
       await expect(
-        nftTicketContract
-          .connect(buyer)
-          .buyTicket(ticketCategoryNameBytes32)
+        nftTicketContract.connect(buyer).buyTicket(ticketCategoryNameBytes32)
       ).to.be.revertedWith("Please pay for ticket");
     });
     it("Should allow minting only with correct price", async () => {
       const buyer = accounts[1];
       // const ticketCategoryBytes32
-      const tx1 = await
-        nftTicketContract.connect(buyer).buyTicket(
-          ticketCategoryNameBytes32,
-          { value: ethers.utils.parseEther(ticketPriceSetVIP.toString()) }
-        );
+      const tx1 = await nftTicketContract
+        .connect(buyer)
+        .buyTicket(ticketCategoryNameBytes32, {
+          value: ethers.utils.parseEther(ticketPriceSetVIP.toString()),
+        });
       await tx1.wait();
-      const numberOfTicketOwnedByBuyerExpected = await nftTicketContract.balanceOf(buyer.address);
+      const numberOfTicketOwnedByBuyerExpected =
+        await nftTicketContract.balanceOf(buyer.address);
       expect(numberOfTicketOwnedByBuyerExpected).to.eq(1);
     });
     it("Should update the number of tickets bought correctly", async () => {
@@ -198,7 +286,7 @@ describe("Interaction with nftTicket", () => {
         await ticketCategoryExpected.numberOfTicketsBought;
       expect(numberOfTicketsBoughtExpected).to.eq(2);
       console.log(`Number of tickets bought: ${numberOfTicketsBoughtExpected}`);
-    })
+    });
     it("Should not allow transfer of tickets bought", async () => {
       const buyer = accounts[1];
       // const ticketCategoryBytes32
@@ -217,7 +305,6 @@ describe("Interaction with nftTicket", () => {
     });
   });
   describe("Setting event details", async () => {
-    
     it("Should set the name correctly", async () => {
       // NOTE: Set the event details accordingly
       const eventNameSetString = "Encode Club Dinner";
