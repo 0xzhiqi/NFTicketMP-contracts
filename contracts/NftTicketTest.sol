@@ -30,7 +30,6 @@ contract NftTicket is ERC721, Ownable {
     */
     mapping(bytes32 => TicketCategory) public ticketCategoryMapping;
 
-    // TODO: Consider removing
     TicketCategory[] public ticketCategoryArray;
 
     constructor(string memory _ticketName, string memory _ticketSymbol)
@@ -61,11 +60,6 @@ contract NftTicket is ERC721, Ownable {
         });
         ticketCategoryArray.push(ticketCategoryMapping[_name]);
     }
-
-    // TODO: Consider removing
-    // function getTicketCategoryArraySize() public view returns (uint256 size) {
-    //     size = ticketCategoryArray.length;
-    // }
 
     /// @dev To test on bsc testnet if this works
     function getTicketCategoryArraySize() public view returns (uint256) {
