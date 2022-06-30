@@ -4,10 +4,13 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+/**
+ * @title NFT tickets
+ * @author Team F
+ * @notice You can use this contract to issue event tickets that are non-transferrable
+ * @dev More features eg royalties for organisers will be added in future releases
+ */
 contract NftTicket is ERC721, Ownable {
-    bool public canTransfer;
-    uint256 public tokenId;
-    string public baseURISet;
     struct TicketCategory {
         bytes32 categoryName;
         uint256 ticketPrice;
@@ -19,18 +22,26 @@ contract NftTicket is ERC721, Ownable {
         bytes32 eventDate;
         bytes32 eventTime;
     }
-    event BuyTicket(address indexed _buyer, bytes32 _ticketCategory);
-    event CheckIn(address indexed _attendee, bool checkedIn);
-    EventDetails public eventDetails;
+    bool public canTransfer;
+    uint256 public tokenId;
+    string public baseURISet;
     mapping(address => bool) public checkedIn;
     mapping(address => bool) public hasBoughtTicket;
     /**
-    @notice maps the ticket category name to the TicketCategory stuct so that
-    price and max no for each ticket category can be queried
-    */
+     * @notice maps the ticket category name to the TicketCategory stuct so that
+     * price and max no for each ticket category can be queried
+     */
     mapping(bytes32 => TicketCategory) public ticketCategoryMapping;
-
+    /**
+     * @dev This array is for tracking the ticket categories only. Details in the
+     * ticket categories of the array are not updated during purchase. In the next
+     * version, the array elements will be replaced with just the ticket category
+     * name in bytes32 to avoid any possible confusion
+     */
     TicketCategory[] public ticketCategoryArray;
+    EventDetails public eventDetails;
+    event BuyTicket(address indexed _buyer, bytes32 _ticketCategory);
+    event CheckIn(address indexed _attendee, bool checkedIn);
 
     constructor(string memory _ticketName, string memory _ticketSymbol)
         ERC721(_ticketName, _ticketSymbol)
@@ -61,14 +72,16 @@ contract NftTicket is ERC721, Ownable {
         ticketCategoryArray.push(ticketCategoryMapping[_name]);
     }
 
-    /// @dev To test on bsc testnet if this works
+    /**
+     * @dev To get the number of ticket categories to iterate through
+     */
     function getTicketCategoryArraySize() public view returns (uint256) {
         return ticketCategoryArray.length;
     }
 
     /**
-    @notice Each wallet can only buy 1 ticket
-    */
+     * @notice Each wallet can only buy 1 ticket
+     */
     function buyTicket(bytes32 _ticketCategory) public payable {
         require(hasBoughtTicket[msg.sender] == false, "Already bought");
         TicketCategory storage ticketCategoryBuying = ticketCategoryMapping[
@@ -91,23 +104,25 @@ contract NftTicket is ERC721, Ownable {
     }
 
     /**
-    @dev for organiser to check user in after verifying user's signature
-    */
+     * @dev for organiser to check user in after verifying user's signature
+     */
     function checkAttendeeIn(address _attendeeAddress) public onlyOwner {
         checkedIn[_attendeeAddress] = true;
         emit CheckIn(_attendeeAddress, checkedIn[_attendeeAddress]);
     }
 
     /**
-    @notice for event organiser to allow transfer 
-    */
+     * @notice for event organiser to allow transfer
+     */
     function setCanTransfer(bool _canTransfer) public onlyOwner {
         canTransfer = _canTransfer;
     }
 
     /**
-    @dev bool canTransfer set to disable resale by default
-    */
+     * @dev bool canTransfer set to disable resale by default. Future iterations
+     * would give event organisers the ability to turn on the transfer function
+     * and charge royalties for ticket resale
+     */
     function transferFrom(
         address from,
         address to,
@@ -124,8 +139,10 @@ contract NftTicket is ERC721, Ownable {
     }
 
     /**
-    @dev bool canTransfer set to disable resale by default
-    */
+     * @dev bool canTransfer set to disable resale by default. Future iterations
+     * would give event organisers the ability to turn on the transfer function
+     * and charge royalties for ticket resale
+     */
     function safeTransferFrom(
         address from,
         address to,
@@ -136,8 +153,10 @@ contract NftTicket is ERC721, Ownable {
     }
 
     /**
-    @dev bool canTransfer set to disable resale by default
-    */
+     * @dev bool canTransfer set to disable resale by default. Future iterations
+     * would give event organisers the ability to turn on the transfer function
+     * and charge royalties for ticket resale
+     */
     function safeTransferFrom(
         address from,
         address to,
@@ -152,9 +171,9 @@ contract NftTicket is ERC721, Ownable {
         _safeTransfer(from, to, tokenId, data);
     }
 
-    /** 
-    @dev To set ticket image link from ipfs
-    */
+    /**
+     * @dev To set ticket image link from ipfs
+     */
     function setBaseURI(string memory _ticketImageURL) public onlyOwner {
         baseURISet = _ticketImageURL;
     }
